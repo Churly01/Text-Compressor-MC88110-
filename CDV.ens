@@ -1,0 +1,1646 @@
+	;______________________________________________________
+	;													   	;
+	;AUTORES: CARLOS NIETO PETINAL  Y 				;
+	;MARCOS OJERO REVENGA   												;
+	;ASIGNATURA: ESTRUCTURA DE COMPUTADORES					;
+	;______________________________________________________	;
+
+
+	;____________________________________MACROS____________________________________
+	LEA: MACRO(ra,eti)															  
+			or ra,r0,low(eti)													  
+			or.u ra,ra,high(eti)												  
+	ENDMACRO																	  
+	
+	LOAD: MACRO (ra, eti)														  
+			LEA (ra, eti)														  
+			ld ra, ra, r0														  
+	ENDMACRO																	  
+	
+	PUSH: MACRO(ra)																  
+			sub r30,r30,4														  
+			st ra,r30,0															  
+		ENDMACRO																  
+	
+	POP: MACRO(ra)																  
+			ld ra,r30,0															  
+			add r30,r30,4														  
+		ENDMACRO																  
+		
+	DBNZ: MACRO(ra,eti)															  
+		sub ra,ra,1																  
+		cmp r4,ra,0															  	  
+		bb0 2,r4,eti															  
+		ENDMACRO																  
+	;______________________________________________________________________________
+
+	;______________________________________________________________________________
+	;																			   ;
+	;-----------------------------------1º HITO------------------------------------;
+	;______________________________________________________________________________;
+	
+	
+	;________________________________TESTS LONGCAD_________________________________
+	org 0x5000 
+	;Usamos 5000 para guardar todos los tests. Los de las siguientes subrutinas se guardaran incrementado por 0x800
+	;PRUEBA CON CADENA NORMAL
+	CADENALC1: 
+	data "12345678901234567890a2\0"
+	
+	PPAL_LC1:	
+			LEA(r30, 50000) 
+			LEA (r5, CADENALC1)
+			PUSH(r5)
+			bsr LongCad
+			addu r30, r30, 4;
+			stop
+
+	;PRUEBA CON CADENA DE 257 CARACTERES PARA COMPROBAR SI ACEPTA CADENAS DE +256 CARACTERES
+	CADENALC2: 
+	data "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567891234567890012345678901234a\n\0"
+		
+	PPAL_LC2:	
+			LEA(r30, 50000) 
+			LEA (r5, CADENALC2)
+			PUSH(r5)
+			bsr LongCad
+			addu r30, r30, 4;
+			stop
+			
+	;PRUEBA CON BYTES CUYO VALOR ASCII SE ENCUENTRA CERCANO AL MINIMO Y MAXIMO
+	CADENALC3:
+	data 0xFFAFAAFF, 0xF313F313, 0x00010101;		
+			
+	PPAL_LC3:	
+			LEA(r30, 50000) 
+			LEA (r5, CADENALC3)
+			PUSH(r5)
+			bsr LongCad
+			addu r30, r30, 4;
+			stop		
+	
+	;PRUEBA CON CADENA VACÍA
+	CADENALC4:
+	data "/0";		
+	
+		PPAL_LC4:	
+			LEA(r30, 50000) 
+			LEA (r5, CADENALC4)
+			PUSH(r5)
+			bsr LongCad
+			addu r30, r30, 4;
+			stop		
+	
+	;______________________________________________________________________________	
+
+
+	;___________________________________LONGCAD____________________________________
+	
+	LongCad:PUSH(r1) 
+			PUSH(r31)
+			or r31, r30, r0 ;Crea el nuevo marco de pila a partir del SP (r30)
+			
+			or r29, r0, r0; Inicializamos a 0 el contador
+			ld r5, r31, 8; Cargamos  la direccion del primer caracter de la cadena
+			
+			COMLC:
+				ld.bu r7, r5, 0; Cargamos el caracter
+				cmp r6, r7,0; Comparamos si es 0
+				bb1 eq, r6, FINLC; Si lo es vamos al final, de lo contrario 
+								 ;seguimos con la siguiente linea de ejecucion
+				addu r5, r5, 1; Incrementamos al siguiente caracter
+				addu r29, r29, 1; Incrementamos el contador
+				br COMLC
+				
+			FINLC:
+			or r30, r31, r31; Restauramos puntero de pila para que apunte al valor correcto			
+			POP(r31)
+			POP(r1)
+			jmp(r1)	
+	;______________________________________________________________________________	
+	
+
+
+	;________________________________TESTS BUSCACAR_________________________________	
+	org 0x5800 
+	BCcarac1:
+	data "a";
+	BCcarac2: 
+	data 0xFF;
+	BCcarac3: 
+	data 0x01; 
+	
+	
+	CADENABC1: 
+	data "01234567890123456789a0123456789\0"
+	
+	; Test que pone los registros a valores que no son 
+	; 0, y busca el caracter en la posicion 20.
+	PPAL_BC1: 
+			LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+			addu r2,r0, 22 ;TO
+			addu r3,r0,0 ;FROM
+			LEA (r4,CADENABC1); Direccion al caracter inicial
+			LEA (r5, BCcarac1)
+			ld.bu r5, r5, 0;
+	
+			PUSH(r2)
+			PUSH(r3)
+			PUSH(r4)
+			PUSH(r5)
+			
+			addu r2, r0, 4143;
+			addu r3, r0, 4143;
+			addu r4, r0, 4143;
+			addu r5, r0, 4143;
+			addu r6, r0, 2542;
+			addu r7, r0, 2542;
+			addu r8, r0, 2542;
+			addu r9, r0, 2542;
+			addu r10, r0, 2542;
+			addu r11, r0, 2542;
+			addu r12, r0, 2542;
+			addu r13, r0, 2542;
+			addu r14, r0, 2542;
+			addu r15, r0, 2542;	
+			addu r16, r0, 2542;
+			addu r17, r0, 2542;
+			addu r18, r0, 2542;
+			addu r19, r0, 6442;
+			addu r20, r0, 2542;
+			addu r21, r0, 5442;
+			addu r22, r0, 5252;
+			addu r23, r0, 5342;
+			addu r24, r0, 544;
+			addu r25, r0, 34242;
+			addu r26, r0, 565;
+			addu r27, r0, 2442;
+			addu r28, r0, 5422;
+			addu r29, r0, 54542;
+			
+			bsr BuscaCar
+			
+			addu r30, r30, 16;
+			stop
+			
+	;Test que llama a BuscaCar con una cadena cuyos caracteres tienen valores cercanos al maximo y minimo en ASCII.
+	;Busca el caracter 0xFF
+	; TO = 25, FROM = 2
+	
+	CADENABC2: 
+		data 0xEAFAFEFD, 0x01023040, 0x02030405, 0xFFAFDABA, 0x00000000;
+	PPAL_BC2: 
+			LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+			addu r2,r0,25 ;TO
+			addu r3,r0,2;FROM
+			LEA (r4,CADENABC2); Direccion al caracter inicial
+			LEA (r5, BCcarac2)
+			ld.bu r5, r5, 0;
+			
+			PUSH(r2)
+			PUSH(r3)
+			PUSH(r4)
+			PUSH(r5)
+			
+			bsr BuscaCar
+			
+			addu r30, r30, 16;
+			stop
+			
+	;Test que llama a BuscaCar con una cadena cuyos caracteres tienen valores cercanos al maximo y minimo en ASCII.
+	;Busca el caracter 0x01
+	
+	CADENABC3: 
+		data 0xEAFAFEFD, 0x01023040, 0x02030405, 0xFFAFDABA, 0x00000000;		
+	PPAL_BC3:
+			LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+			addu r2,r0,1;TO
+			addu r3,r0,0 ;FROM
+			LEA (r4,CADENABC3); Direccion al caracter inicial
+			LEA (r5, BCcarac3)
+			ld.bu r5, r5, 0;
+			
+			PUSH(r2)
+			PUSH(r3)
+			PUSH(r4)
+			PUSH(r5)
+			bsr BuscaCar
+			addu r30, r30, 16;
+			stop
+	
+			
+	; Test que prueba el caso de ejemplo presentado en los casos de ejemplo.
+	BuscaCarC:    data    0xA0
+	CADENABC4: data    0x40302010, 0x80706050, 0x01020304, 0x02030405, 0x03040506, 0x04050607, 0x05060708, 0xA090
+		
+	PPAL_BC4:
+			LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+			addu r2,r0,29;TO
+			addu r3,r0,0 ;FROM
+			LEA (r4,CADENABC4); Direccion al caracter inicial
+			LEA (r5, BuscaCarC)
+			ld.bu r5, r5, 0;
+			
+			PUSH(r2)
+			PUSH(r3)
+			PUSH(r4)
+			PUSH(r5)
+			bsr BuscaCar
+			stop		
+	;______________________________________________________________________________			
+			
+
+
+	;___________________________________BUSCACAR___________________________________
+	org 0x1000
+	BuscaCar:
+			PUSH(r1) 
+			PUSH(r31)
+			or r31, r30, r0 ;Crea el nuevo marco de pila a partir del SP (r30)
+			
+			ld.bu r4, r31, 8; Cargamos el caracter 
+			ld r5, r31, 12; Cargamos la direccion del primer caracter
+			ld r6, r31, 16; Cargamos el parametro from (en valor)
+			or r29, r6, r0; Cargamos en r29 el valor de from
+			addu r5, r5, r6; Ponemos r5 en la direccion correcta
+			ld r8, r31, 20; Cargamos en r8 el parametro to
+
+			COM:
+				ld.bu r7, r5, 0; Cargamos el caracter
+				cmp r3, r7, 0; 
+				bb1 eq, r3, FINBUSC; Comparamos si es 0 y salimos si lo es 
+				cmp r3, r29, r8;
+				bb1 eq, r3, FINTO; Comprobamos si es igual a to, si lo es salimos e 
+								 ; igualamos el valor del contador a to (r8). 
+				cmp r3, r7,r4; 
+				bb1 eq, r3, FINBUSC; Comparamos si el caracter del puntero es igual
+								   ;al buscado y vamos al final en tal caso
+				addu r5, r5, 1; Incrementamos al siguiente caracter
+				addu r29, r29, 1; Incrementamos el contador
+				br COM; 
+			
+			FINTO: 
+				or r29, r8, r0;
+			
+			FINBUSC: 
+				or r30, r31, r31;
+				POP(r31)
+				POP(r1)
+				jmp(r1)
+				
+	;______________________________________________________________________________	
+
+	
+
+	;______________________________TESTS COINCIDENCAD______________________________	
+	org 0x6000
+	CADENACC1:
+	data "111\0"
+
+	
+	; Test que prueba una cadena de 3 caracteres contra si misma.
+	PPAL_CC1:	
+			LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+			LEA (r5, CADENACC1)
+			PUSH(r5)
+			LEA (r5, CADENACC1)
+			PUSH(r5)
+			bsr CoincidenCad
+			addu r30, r30, 8;
+			stop
+			
+	CADENACC2:
+	data "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+	data "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+	data "111111111111111111111111111111111111111111\0"
+	
+	; Test que prueba una cadena de mas de 256 caracteres contra si misma.
+	PPAL_CC2:	
+			LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+			LEA (r5, CADENACC2)
+			PUSH(r5)
+			LEA (r5, CADENACC2)
+			PUSH(r5)
+			bsr CoincidenCad
+			addu r30, r30, 8;
+			stop
+		
+
+	; Test que comprueba dos cadenas que coinciden en los 3 primeros caracteres. 
+	CADENACC31:	
+	data "abc1234\0"
+	CADENACC32:		
+	data "abcdaga\0"
+	
+	PPAL_CC3:	
+			LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+			LEA (r5, CADENACC31)
+			PUSH(r5)
+			LEA (r5, CADENACC32)
+			PUSH(r5)
+			bsr CoincidenCad
+			addu r30, r30, 8;
+			stop
+
+	
+	; Test que llama a CoincidenCad con dos cadenas 
+	; cuyos valores en ASCII estan cercanos al maximo y al mínimo.
+	CADENACC41: 
+	data 0x0101FFFF, 0x0101ABAB, 0x0232FDEF, 0x00000000;
+	CADENACC42: 
+	data 0x0101FFFF, 0x0101ABAB, 0x0232FDEE, 0x00000000;
+	
+	PPAL_CC4:	
+			LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+			LEA (r5, CADENACC41)
+			PUSH(r5)
+			LEA (r5, CADENACC42)
+			PUSH(r5)
+			bsr CoincidenCad
+			addu r30, r30, 8;
+			stop	
+	;______________________________________________________________________________	
+		
+			
+
+	;_________________________________COINCIDENCAD_________________________________
+
+	CoincidenCad:
+			PUSH(r1) 
+			PUSH(r31)
+			or r31, r30, r0; Crea elnuevo marco de pila a partir del SP (r30)
+			or r29, r0, r0; Inicializamos a 0 el contador
+			
+			ld r5, r31, 8; Cargamos  la direccion del primer caracter de la cadena1
+			ld r7, r31,12;Cargamos  la direccion del primer caracter de la cadena2
+			
+			COMCC:
+			
+				; Comparador de primer 0
+				ld.bu r6, r5, 0; Cargamos el caracter de la cadena1
+				ld.bu r8, r7, 0; Cargamos el caracter de la cadena2
+				cmp r9, r6,0x00; Comparar el valor de r6 con 0.
+				bb1 eq, r9, FINCC; Si es igual a 1 hemos llegado al final.
+				cmp r9, r8,0x00; Comparar el valor de r8 con 0.
+				bb1 eq, r9, FINCC; Si es igual a 1 hemos llegado al final.
+				
+				;Comparador de cadenas
+				cmp r9, r6, r8; Comparar el valor de r6 con r8.
+				bb0 eq, r9, FINCC; Si es igual a 0 hemos llegado al final.
+				add r29, r29, 1; Incrementamos el contador.	
+				add r5, r5, 1; Incrementamos al siguiente caracter cad1.
+				add r7, r7, 1; Incrementamos al siguiente caracter cad2.		
+				br COMCC; Salta de vuelta porque ni ha llegado al final
+						;ni son diferentes.
+			
+			FINCC: ; Caso Final
+				or r30, r31, r31;
+				POP(r31)
+				POP(r1)
+				jmp(r1)
+	;______________________________________________________________________________	
+			
+
+	;______________________________________________________________________________
+	;																			   ;
+	;-----------------------------------2º HITO------------------------------------;
+	;______________________________________________________________________________;
+	
+
+
+	;________________________________TESTS BUSCAMAX_________________________________
+	
+	org 0x6800
+	; Comprobamos si devuelve 3 para 131 313 (La separacion marca el comienzo de la cadena REF[max])
+	; Max = 3 
+	; JJ = 46000
+	CADENABM1:
+	data "131313\0"
+	PPAL_BM1:
+			LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+			addu r2,r0,3;MAX
+			addu r3,r0,65000;JJ
+			LEA (r4,CADENABM1); Direccion al caracter inicial
+			
+			PUSH(r3)
+			PUSH(r2)
+			PUSH(r4)
+
+			bsr BuscaMax
+			addu r30, r30, 12;
+			stop
+
+
+	; Comrpobamos si devuelve cuatro para la cadena 1234 12345 
+	; Max = 4
+	; JJ = 46000	
+	
+	CADENABM2:
+	data "0123412345\0"
+	PPAL_BM2:
+			LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+			addu r2,r0,5;MAX
+			addu r3,r0,65000;JJ
+			LEA (r4,CADENABM2); Direccion al caracter inicial
+			
+			PUSH(r3)
+			PUSH(r2)
+			PUSH(r4)
+
+			bsr BuscaMax
+			addu r30, r30, 12;
+			
+			stop
+			
+	; Test que comprueba si devuelve -1 cuando no encuentra ninguna coincidencia. 
+	; MAX = 4
+	; JJ = 65000
+	CADENABM3:
+	data "123abcd\0"
+	PPAL_BM3:
+			LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+			addu r2,r0,4;MAX
+			addu r3,r0,65000;JJ
+			LEA (r4,CADENABM3); Direccion al caracter inicial
+			
+			PUSH(r3)
+			PUSH(r2)
+			PUSH(r4)
+
+			bsr BuscaMax
+			addu r30, r30, 12;
+			stop
+			
+	; Test que comprueba varias posibles cadenas de diferentes longitudes, una mas larga que la siguiente. 
+	; Deberia devolver 5. Todos los registros inicializados a un valor que no es 0
+	; MAX = 12
+	; JJ = 65000
+	CADENABM4:
+	data "1231234123451234577\0"
+	PPAL_BM4:
+			LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+			addu r2,r0,12;MAX
+			addu r3,r0,65000;JJ
+			LEA (r4,CADENABM4); Direccion al caracter inicial
+			
+			
+			
+			PUSH(r3)
+			PUSH(r2)
+			PUSH(r4)
+			
+			addu r2, r0, 4143;
+			addu r3, r0, 4143;
+			addu r4, r0, 4143;
+			addu r5, r0, 4143;
+			addu r6, r0, 2542;
+			addu r7, r0, 2542;
+			addu r8, r0, 2542;
+			addu r9, r0, 2542;
+			addu r10, r0, 2542;
+			addu r11, r0, 2542;
+			addu r12, r0, 2542;
+			addu r13, r0, 2542;
+			addu r14, r0, 2542;
+			addu r15, r0, 2542;	
+			addu r16, r0, 2542;
+			addu r17, r0, 2542;
+			addu r18, r0, 2542;
+			addu r19, r0, 6442;
+			addu r20, r0, 2542;
+			addu r21, r0, 5442;
+			addu r22, r0, 5252;
+			addu r23, r0, 5342;
+			addu r24, r0, 544;
+			addu r25, r0, 34242;
+			addu r26, r0, 565;
+			addu r27, r0, 2442;
+			addu r28, r0, 5422;
+			addu r29, r0, 54542;
+			
+			bsr BuscaMax
+			addu r30, r30, 12;
+			stop		
+	;______________________________________________________________________________		
+	
+	
+	
+	;___________________________________BUSCAMAX___________________________________
+			
+	BuscaMax:
+			PUSH(r1) 
+			PUSH(r31)
+			or r31, r30, r0 ;Crea el nuevo marco de pila a partir del SP (r30)
+			
+			subu r30, r30, 12; Reservamos espacio para 3 variables locales.
+			; En -4 estara el maximo actual
+			; En -8 estara el puntero que avanza sobre REF
+			; En -12 estara el caracter en REF[max] (por comodidad)
+			
+			ld r5, r31,16; Sacamos la direccion de jj
+			sub r2, r0, 1; Cargamos un -1 en nuestra variable local. 
+			st r0, r31,-4; Veremos que si no se encuentra se devolvera este valor para cumplir las especificaciones. 
+			st r2, r5, 0; Almacenamos un -1 en la posicion inicial de jj
+			
+			ld r3, r31,8 ;Cargamos  la direccion del primer caracter de ref a 0
+			ld r12, r31,12;Cargamos el valor de max
+			add r4, r12, r3;Ahora r4 está apuntando al caracter ref[max]
+			or r10, r3, r0;Ahora r10 está apuntando a r3 
+			ld.bu r7, r4, r0;Cargamos el primer caracter de ref a max
+			st r7, r31, -12; Cargamos el caracter en la variable local
+
+			BUCLEBM:
+				ld r3, r31, 8; Cargamos de pila el valor de REF
+				ld.bu r7, r31, -12; Cargamos el caracter max
+				subu r11, r10, r3; Hacemos el calculo del from actual
+				; El from sera la posicion donde queremos que busque, es decir, el valor de ref[pos] - Ref[0]
+
+				; PASO DE PARAMETROS POR PILA
+				PUSH(r12); to
+				PUSH(r11); from
+				PUSH(r3); Ref
+				PUSH(r7); C
+				; Llamada a la subrutina BuscaCar
+				bsr BuscaCar
+				; RECUPERACION DE LOS PARAMETROS DE BUSCACAR
+				POP(r7); C
+				POP(r3); Ref
+				POP(r11); from
+				POP(r12); to
+				
+				ld r12, r31, 12; Recogemos el valor del parametro MAX
+				ld r28, r31, -4; Recogemos el valor del maximo actual
+				addu r10, r3, r29; Sumamos el valor de buscacar al puntero de ref
+				st r10, r31, -8; Guardamos el valor de r10 en nuestra variable local (---IGUAL NO HACE FALTA---)
+				; De esa forma, mantenemos el puntero en la posicion que sabemos que coinciden los caracteres
+				addu r16, r3, r12; Calculamos la suma del valor de max al valor de ref antes
+				
+				cmp r2, r16, r10; Comparar si max es igual a lo que ha devuelto buscacar
+				bb1 eq, r2, FINBM; Si r29 == r12 ---> Nos encontramos en MAX, se acaba la subrutina
+				
+				; ---------- Si llega hasta aqui, es porque hay al menos coincidencia de un caracter, si no, devuelve -1  ----------
+				PUSH(r16) ;PASAMOS CADENA 2 (Corresponde con Ref[max])
+				PUSH(r10) ;PASAMOS CADENA 1 (Corresponde con Ref[pos], pos siendo una posicion menor que max) 
+				bsr CoincidenCad
+				POP(r10) ; RECUPERAMOS CADENA 1
+				POP(r16) ; RECUPERAMOS CADENA 2
+		
+				ld r28, r31,-4; Recuperamos el valor de el maximo actual
+				cmp r2, r29, r28; Comparar cuál es mayor
+				bb1 gt, r2, BMMAYOR; Si es igual a 1 ha de cambiar r28 y jj
+				VUELTABM:
+				addu r10, r10, 1;  Sumamos 1 al puntero de ref
+				st r10, r31, -8; Guardamos el valor de r10 en nuestra variable local
+				br BUCLEBM;
+			
+			BMMAYOR:
+				ld r3, r31, 8; Cargamos el valor de REF
+				ld r5, r31, 16; Cargamos el valor de JJ
+				cmp r2, r29, 255;Comparamos si el valor del maximo actual es superior a 255
+				bb1 lt, r2, BM255; Si es menor saltamos directamente a guardarlo
+				addu r28, r0, 255; Cargamos el valor 255 en el r28 al ser superior r29 a 255
+				st r28, r31, -4; Cargamos el valor en memoria 
+				ld r10, r31,-8;
+				subu r16, r10, r3;
+				st r16, r5, 0;
+				br FINBM; Saltamos al final
+				BM255:
+				addu r28, r29, r0; Cargamos en r28 el valor del maximo actual
+				st r28, r31, -4; Guardamos en  la variable local el valor del maximo actual
+				ld r10, r31,-8;
+				subu r16, r10, r3;
+				st r16, r5, 0;
+				br VUELTABM;
+			
+			FINBM: ; Caso Final
+				ld r28, r31, -4; Recuperamos el valor maximo.
+				or r29, r28, r0; Cargamos el valor máximo
+				or r30, r31, r31;
+				POP(r31)
+				POP(r1)
+				jmp(r1)
+	;______________________________________________________________________________		
+				
+	
+
+	;________________________________TESTS CHECKSUM________________________________	
+		
+		org 0x7000
+		; Test que comprueba la cadena frente al 0x00
+		CADENACS1: 
+		data "\0"
+		PPAL_CS1:
+			LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+			LEA (r4,CADENACS1); Direccion al caracter inicial
+			PUSH(r4)
+			bsr Checksum
+			addu r30, r30, 4;
+			stop	
+
+		; Test que comprueba con ABCD (Multiplo de 4). 
+		CADENACS2:
+		data "ABCD\0"
+		PPAL_CS2:
+			LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+			LEA (r4,CADENACS2); Direccion al caracter inicial
+			PUSH(r4)
+			bsr Checksum
+			addu r30, r30, 4;
+			stop
+			
+		; Test que comprueba con una cadena de caracteres con valores cercanos al maximo y al minimo en ASCII 
+		; Con los registros inicializados a valores que no son 0. Despues del /0 hay caracteres arbitrarios.
+		CADENACS3: 
+		data 0xFAFFBADA, 0xFBDFFE01, 0x02030405, 0x01FF00FA;
+		PPAL_CS3:
+			LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+			LEA (r4,CADENACS3); Direccion al caracter inicial
+			PUSH(r4)
+			
+			addu r2, r0, 4143;
+			addu r3, r0, 4143;
+			addu r4, r0, 4143;
+			addu r5, r0, 4143;
+			addu r6, r0, 2542;
+			addu r7, r0, 2542;
+			addu r8, r0, 2542;
+			addu r9, r0, 2542;
+			addu r10, r0, 2542;
+			addu r11, r0, 2542;
+			addu r12, r0, 2542;
+			addu r13, r0, 2542;
+			addu r14, r0, 2542;
+			addu r15, r0, 2542;	
+			addu r16, r0, 2542;
+			addu r17, r0, 2542;
+			addu r18, r0, 2542;
+			addu r19, r0, 6442;
+			addu r20, r0, 2542;
+			addu r21, r0, 5442;
+			addu r22, r0, 5252;
+			addu r23, r0, 5342;
+			addu r24, r0, 544;
+			addu r25, r0, 34242;
+			addu r26, r0, 565;
+			addu r27, r0, 2442;
+			addu r28, r0, 5422;
+			addu r29, r0, 54542;
+			
+			bsr Checksum
+			addu r30, r30, 4;
+			stop	
+			
+	
+	
+		
+		; Test que comprueba cuando los caracteres de la ultima palabra son 1. (RESTO 1)
+		; Despues del 0x00 hay caracteres arbitrarios que no debe tener en cuenta.
+		CADENACS4: 
+		data 0xF1F1F1F1, 0xF2F2F2F2,0xF3F3F3F3,0xF4F4F4F4,0x01010101,0x02020202,0x03030303, 0x04040404 
+		data 0xFFFFFFFF,0x03030303,0xDDDDDDDD,0xCCCCCCCC,0xFF00CCDD,0x00AFFFBC;
+		
+		PPAL_CS4:
+		LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+		LEA (r4,CADENACS4)
+		PUSH(r4)
+		bsr Checksum
+		addu r30, r30, 4;
+		stop
+		
+		; Test que comprueba cuando los caracteres de la ultima palabra son 2. (RESTO 2)
+		CADENACS5: 
+		data "ABCDEA\0AA"
+		
+		PPAL_CS5:
+		LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+		LEA (r4,CADENACS5)
+		PUSH(r4)
+		bsr Checksum
+		addu r30, r30, 4;
+		stop
+		
+		; Test que comprueba cuando los caracteres de la ultima palabra son 3. (RESTO 3)
+		CADENACS6: 
+		data "ABCDEAA\0AAAA"
+		
+		PPAL_CS6:
+		LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+		LEA (r4,CADENACS6)
+		PUSH(r4)
+		bsr Checksum
+		addu r30, r30, 4;
+		stop
+	
+		
+	;__________________________________CHECKSUM____________________________________
+	
+	Checksum:
+			PUSH(r1);
+			PUSH(r31)
+			or r31, r30, r30; 
+			or r29, r0,r0;
+			ld r3, r31, 8; Cargamos la direccion del texto; 
+			ld r4, r3, 0; Cargamos y comprobamos si es 0, si es cero, devuelve 0. 
+			
+			cmp r2, r4, 0x00;
+			bb1 eq, r2,FINCS;
+			; Primero llamamos a longcad, para obtener la longitud de la cadena
+			; Si es multiplo de 4 entonces no necesitamos hacer nada
+			; Si no, entonces obtenemos el resto de dividir entre 4 y anyadir los caracteres
+			; Correspondientes para que el texto sea multiplo de 4; 
+			
+			PUSH(r3); Pasamos por pila la longitud cadena
+			bsr LongCad ;En r29 nos devuelve la longitud del texto
+			POP(r3); Recuperamos el parametro texto
+			; --- Division entre 4 --- 
+			
+			divu r5, r29, 4; Mete en r5 <- r29/4 (como entero)
+			; Obtenemos el resto mediante la formula r = D - c*d
+			mulu r5,r5, 4; r4 <- 4*r5 (c*d)
+			subu r6, r29, r5; r6 <- r29-r5 (D-(c*d))
+			
+			TTDOCS:
+			;-- Hacemos el checksum---
+			; En r29 tenemos la longitud nueva de la cadena. Pasamos este valor a r28. 
+			; En r3 seguimos teniendo el puntero al texto, lo usaremos para iterar sobre el texto.
+			; En r7 cargaremos los valores de cada 4 bytes de la cadena.
+			divu r28, r29,4; Pasamos a r28 el valor de r29/4 (Lo usaremos como contador).
+			or r29, r0, r0; Ponemos r29 a 0, aqui almacenaremos la suma del resultado. 
+			
+			SUMACS: 
+			ld r7, r3, 0; Cargamos los bytes 
+			addu r29, r29, r7; Sumamos a r29 el valor de los cuatro bytes leidos. 
+			addu r3, r3, 4; Pasamos a los siguientes cuatro bytes. 
+			DBNZ(r28, SUMACS);
+			
+			ld r7, r3,0; Cargamos la ultima palabra
+			mulu r6, r6, 8; Multiplicamos el resto por dos para usar el clr
+			addu r6, r6, 1; Sumamos uno al r6 para poner a 0 todos los bits a partir de la poisicion en r6
+			clr r7, r7, r6; Ponemos a 0 los bits  apartir de la posicion en resto*4+1
+			addu r29, r29,r7; Sumamos al r29 los valores correspondientes. 
+			
+			FINCS: 
+			or r30, r31, r31;
+			POP(r31)
+			POP(r1)
+			jmp(r1)
+	;______________________________________________________________________________		
+			
+			
+	;______________________________________________________________________________
+	;																			   ;
+	;---------------------------------ÚLTIMO HITO----------------------------------;
+	;______________________________________________________________________________;
+		
+		
+	;________________________________TESTS COMPRIME________________________________
+	
+	org 0x7800
+		
+		; Llama a Comprime con la cadena de ejemplo de la presentacion. 
+		CADENAC1: 	data "tres tristes tigres comen trigo en un trigal, el primer tigre que...\0" 
+		PPAL_C1:
+		LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+		addu r4, r0, 57000;
+		PUSH(r4); CARGAMOS CMPRDO
+		LEA (r4,CADENAC1)
+		PUSH(r4); CARGAMOS TEXTO
+		
+		bsr Comprime
+		addu r30, r30, 8;
+		stop
+		
+		; Llama a comprime con el ejemplo del PDF "Casos de ejemplo" que no admite compresion
+		CADENAC2: data "0123456789\0" 
+		PPAL_C2:
+		LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+		addu r4, r0, 57000;
+		PUSH(r4); CARGAMOS CMPRDO
+		LEA (r4,CADENAC2)
+		PUSH(r4); CARGAMOS TEXTO
+		
+		bsr Comprime
+		addu r30, r30, 8;
+		stop
+		
+		
+		; Llama a comprime con una cadena que admite maxima compresion, de 32 caracteres. 
+		CADENAC3: 	data "12345678abcdefgh12345678abcdefgh\0" ; CADENA DE 32 CARACTERES QUE ADMITE MAXIMA COMPRESION
+		PPAL_C3:
+		LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+		addu r4, r0, 57000;
+		PUSH(r4); CARGAMOS CMPRDO
+		LEA (r4,CADENAC3)
+		PUSH(r4); CARGAMOS TEXTO
+		
+		bsr Comprime
+		addu r30, r30, 8;
+		stop
+		
+		
+		;Llama a comprime con una cadena de 36 caracteres, cuyo valores en ASCII son cercanos al maximo y minimo. 
+		CADENAC4: 	data 0xFAFAEFEF,0xFAFAEFEF, 0x01010202,  0xBAABCDFF, 0x02727374,0xDD010102,0x01010202, 0xFAFAEFEF,0xEAFAEFEF, 0x00000000; 
+		PPAL_C4:
+		LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+		addu r4, r0, 57000;
+		PUSH(r4); CARGAMOS CMPRDO
+		LEA (r4,CADENAC4)
+		PUSH(r4); CARGAMOS TEXTO
+		
+		bsr Comprime
+		addu r30, r30, 8;
+		stop
+		
+		;Llama a comprime con una cadena de 36 caracteres, cuyo valores en ASCII son cercanos al maximo y minimo. 
+		; En este caso, las compresiones comienzan a mitad de los bytes. 
+		CADENAC5: 	data 0xFAFAEFEF,0xFAFAEFEF, 0x01010202,  0xBAABCDFF, 0x02727374,0x01010202,0x01010202, 0xFAFAEFEF,0xEAFAEFEF, 0x00000000;
+		PPAL_C5:
+		LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+		addu r4, r0, 57000;
+		PUSH(r4); CARGAMOS CMPRDO
+		LEA (r4,CADENAC5)
+		PUSH(r4); CARGAMOS TEXTO
+		
+		bsr Comprime
+		addu r30, r30, 8;
+		stop
+		
+		;Llama a comprime con una cadena de 36 caracteres, cuyo valores en ASCII son cercanos al maximo. Admite compresion.
+		CADENAC6: data 0xFAFAEFEF,0xFAFAEFEF, 0xFCFCFCFC,0xBAABCDFF,0xBAABCDFF, 0xFCFCFCFC ;
+		PPAL_C6:
+		LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+		addu r4, r0, 57000;
+		PUSH(r4); CARGAMOS CMPRDO
+		LEA (r4,CADENAC6)
+		PUSH(r4); CARGAMOS TEXTO
+		
+		bsr Comprime
+		addu r30, r30, 8;
+		stop
+				
+
+		; Llama a comprime con una cadena cuya longitud es superior a 256 caracteres
+		CADENAC7: data "123456789012345678901234567890123456123456789012345612345678901234567890123456789012"
+		data "345678901234567890123456789012345678901234567890123456789012345678901234567890123456"
+		data "7890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567891234567890012345678901234jpokiljpokil\0";
+		
+		PPAL_C7:
+		LEA(r30, 50000) ; Inicializamos el puntero de pila. 
+		addu r4, r0, 57000;
+		PUSH(r4); CARGAMOS CMPRDO
+		LEA (r4,CADENAC7)
+		PUSH(r4); CARGAMOS TEXTO
+		
+		bsr Comprime
+		addu r30, r30, 8;
+		stop
+	;______________________________________________________________________________		
+	
+	
+	
+	;____________________________________COMPRIME__________________________________	
+	
+	Comprime:
+			PUSH(r1);
+			PUSH(r31)
+			or r31, r30, r30; 
+			or r29, r0,r0;
+			ld r3, r31, 8; Cargamos la direccion del texto; 
+
+	;-------------------------------1--------------------------------------
+		
+		; Primero llamamos a longcad, para obtener la longitud de la cadena
+			PUSH(r3); Pasamos por pila la longitud cadena
+			bsr LongCad ;En r29 nos devuelve la longitud del texto
+			;¿QUE HACER SI LA CADENA ES MENOR O IGUAL A 8?
+			POP(r3); Recuperamos el parametro texto
+			st r29, r31, -36; Guardamos la longitud para mas tarde
+			; addu r28, r29, 3; Metemos r29 + 3 en r28 y dividimos para calcular el espacio del mapa de bits. 
+			; ; Sumamos 3 para que sea el numero entre cuatro por exceso. 
+			; divu r28, r28, 4; 
+			
+	;-------------------------------2--------------------------------------
+			
+			subu r30, r30, 40; 
+			; -4 para el jj 
+			; -8 para el puntero al texto
+			; -12 para el contador
+			; -16 para el puntero a al texto comprimido.
+			; -20 para el byte de ayuda para el mapa de bits.
+			; -24 para el puntero de byte de ayuda.
+			; -28 para el puntero al mapa de bits. 
+			; -32 para el contador potencias de 2
+			; -36 para la longitud 
+			; -40 para el puntero al comienzo del texto en la pila
+			divu r5, r29, 4; Mete en r5 <- r29/4 (como entero)
+			; Obtenemos el resto mediante la formula r = D - c*d
+			mulu r5,r5, 4; r5 <- 4*r5 (c*d)
+			subu r6, r29, r5; r6 <- r29-r5 (D-(c*d))
+			cmp r2,r6,0x00;
+			bb1 eq, r2, M4C;
+			
+			add r5, r5, 4;
+			
+			M4C:
+			subu r30, r30, r5;
+			
+	;-------------------------------3--------------------------------------
+			
+			st r0, r31, -8; Cargamos el puntero texto
+			st r0, r31, -16; Cargamos el puntero al texto comprimido. (ponemos un 0 inicialmente) 
+			st r0, r31, -24; Incializamos a 0 la var local del puntero al byte de ayuda
+			st r0, r31, -20; Incializamos a 0 la var local del byte de ayuda
+			
+			;________________________________________________
+			addu r25, r0, 40;
+			addu r25, r25, r5;
+			subu r25, r31, r25;
+			st r25, r31, -40; 
+			;________________________________________________
+			
+			addu r2, r0, 5;
+			st r2, r31, -28; Incializamos a -32 el puntero del mapa de bits.
+			
+			addu r2, r0, 128;
+			st r2, r31, -32; Inicializamos a 128 la variable de potencias de 2 (Para el mapa de bits)
+			
+	;-------------------------------4--------------------------------------
+			
+			addu r3, r0, 0; Incializamos a 0 el puntero a r3
+			addu r11, r0, 0; Incializamos a 0 el puntero a r11
+			
+			; COMO M=1, ponemos los 8 primeros caracteers iguales. Si quisieramos un M diferente, multiplicar 8 por M. 
+			addu r8, r0, 8; Inicializamos un contador de 8, para avanzar y copiar las dos cadenas en sus primeros 8 bytes.
+			
+			;ld r4, r30, 0; Cargamos el comienzo de cmprdo en r4
+			ld r12, r31, 8; Cargamos el comienzo del texto
+			B8C:
+			; CAMBIADO AQUI---------------------------
+			ld.bu r5, r12, r3; Cargamos el byte en r5 cmprdo + r11)ç
+			ld r25, r31, -40; Cargamos la direccion
+			st.b r5, r25, r11; Metemos en r25 el byte del texto
+			;Avanzamos los punteros
+			addu r11, r11, 1;Incrementamos puntero al texto comprimido
+			addu r3, r3, 1; Incrementamos puntero al texto
+			DBNZ (r8, B8C)
+			
+			
+			; CAMBIADO AQUI---------------------------
+			st r3, r31, -8; Cargamos en el puntero del texto un 8. 
+			st r11, r31, -16; Cargamos tambien en el puntero del texto comprimido un 8.
+			
+	;-------------------------------5--------------------------------------
+	
+			; Si M!=1 cambiar contador para que sea M*8.
+			subu r8, r29,8; Cargamos en r8 la longitud de la cadena (nos servira para detener el bucle)
+			
+			BUCLEC:
+	;-------A
+			
+			st r8, r31, -12; Guardamos el contador en la variable local
+			
+			
+			subu r10, r31, 4; (r10 contiene la direccion variable local reservada para JJ).
+			PUSH (r10) ; Cargamos jj (el lugar donde reservamos nuestra var local, r31-4)
+			; En jj se nos devuelve la posicion de la coincidencia.
+			
+			
+			ld r3, r31, -8; Cargamos el puntero al texto (SERA EL MAX DE BUSCAMAX)
+			PUSH (r3) 
+			ld r7, r31, 8; Cargamos el valor del texto para pasarlo a BuscaMax(REF)
+			PUSH (r7)
+			
+			bsr BuscaMax
+			POP (r7)
+			POP (r3)
+			POP (r10)
+			
+			cmp r2, r29, 4; COMPARAMOS SI LA COINCIDENCIA MIDE MENOS DE CUATRO
+			bb1 lt, r2, MNR4;
+			; Si ha llegado aqui, entonces la coincidencia mide 4 o mas.
+
+	;-------C		
+			MYR4:
+			ld r11, r31, -16; Cargamos el puntero a cmprdo.
+			
+			ld.h r10, r10, r0; r10 <- M(jj)  Metemos en r10 el valor de jj
+			
+			ld r25, r31, -40; Cargamos la direccion
+			extu r5, r10, 8<0>; En r5 tenemos la parte inferior de la posicion de la coincidencia(el byte menos significativo)
+			st.b r5, r25, r11;
+			addu r11, r11, 1;
+			extu r5, r10, 8<8>; En r5 tenemos la parte superior (el byte mas significativo)
+			st.b r5, r25, r11;
+			addu r11, r11, 1;
+			st.b r29, r25, r11; Metemos el valor de L(Longitud de la subcadena) en el texto cmprdo. 
+			addu r11, r11, 1; Incrementamos puntero al texto comprimdo en uno. 
+			
+			addu r3,r3, r29;
+			st r11, r31, -16; Guardamos el puntero al texto comprimido incrementado en 3. 
+			st r3, r31, -8; Guardamos el puntero al texto incrementado en L. 
+			ld r8, r31, -12; Cargamos el contador, y lo decrementamos en (L-1) para mantenerlo actualizado.
+			subu r8, r8, r29; Restamos r29
+			addu r8, r8, 1; Sumamos uno
+			st r8, r31, -12; Volvemos a guardar el contador.
+			
+			ld r2, r31, -32; Cargamos la potencia de 2 auxiliar. 
+			ld.bu r3, r31, -20; Byte de ayuda
+			ld r4, r31, -24; Puntero al byte de ayuda
+
+			addu r3, r3, r2; Sumamos la potencia de dos (Inicialmente 128) al byte para el mapa de bits
+			;(128 es la pos7, 64 la pos6, 32 pos5, 16 pos4, 8 pos3, 4 pos2, 2 pos1, 1 pos0);
+			st r3, r31, -20;
+			
+			br ACTBYTEC; Salta al tratamiento del puntero del byte de ayuda
+			
+	;-------B		
+			MNR4:
+			; Si ha llegado aqui, entonces es menor que cuatro la coincidencia.
+			; (En r3 ya tenemos el puntero al texto, o lo que es lo mismo, MAX de BuscaMax)
+			ld r4, r31, -16; Cargamos el puntero al texto comprimido.
+			ld r25, r31, -40; Cargamos la direccion
+			ld r12, r31, 8; Cargamos el comienzo del texto
+			ld.bu r5, r12, r3; Cargamos el byte en r5
+			st.b r5, r25 ,r4; Lo guardamos en r4
+			
+			
+			addu r3, r3, 1; Incrementamos punteros del texto
+			addu r4, r4, 1; Incrementamos puntero al texto comprimido
+			
+			st r3, r31, -8; Guardamos punteros
+			st r4, r31, -16;
+			
+			; TRATAMIENTO DE ACTUALIZACION DEL BYTE DE AYUDA Y SU PUNTERO
+			ACTBYTEC: 
+			
+			ld r15, r31, -24; Cargamos el puntero al byte de ayuda. 
+			addu r15, r15, 1;
+			
+			;COMPROBAMOS SI ESTA LLENO YA EL BIT DE AYUDA
+			addu r3, r0, 8;
+			cmp r2, r15, r3; Si es 8, incrementamos en uno el puntero al mapa de bits y guardamos el byte de ayuda en su posicion y lo reinicializamos a 0. 
+			bb1 eq, r2, STOMPBITS;
+			
+			st r15, r31, -24; Guardamos el puntero al byte de ayuda. En este caso no es 8
+			
+			ld r2, r31, -32;Cargamos la potencia de 2. 
+			divu r2, r2, 2; La dividimos entre 2 (bajamos una posicion)
+			st r2, r31, -32; Lo cargamos de vuelta
+			
+			br FINBC; 
+			
+			
+			STOMPBITS: 
+			ld r16, r31, -28; Cargamos puntero al mapa de bits. En esta posicion metemos el byte. 
+			ld r4, r31, 12; Cargamos el puntero a CMPRDO
+			ld.bu r17, r31, -20; Cargamos el byte de ayuda. En este caso, esta lleno. 
+			st.b r17,r4, r16; Cargamos el byte de ayuda en el mapa de bits.  
+			st r0, r31, -20; Reiniciamos a 0 el byte de ayuda. 
+			st r0, r31, -24; Reiniciamos a 0 el puntero al byte de ayuda. 
+			addu r16, r16, 1; 
+			st r16, r31, -28; Lo cargamos incrementado en su posicion el puntero al mapa de bits. 
+			addu r2, r0, 128; Cargamos la potencia de 2 de vuelta a 128 para el siguiente bucle. 
+			st r2, r31, -32; La cargamos de vuelta, ya actualizada.
+			br FINBC; 
+			
+			FINBC: 
+			ld r8, r31, -12;
+
+			DBNZ (r8, BUCLEC)
+			
+			;-------------------------------6--------------------------------------
+			; Comprobamos si el ultimo byte ha sido introducido en el mapa de bits.
+			ld r3, r31, -28; Cargamos el puntero al mapa de bits. Si no es 0, entonces actualizar el mapa de bits con el ultimo byte. 
+			cmp r2, r3, 0;  
+			bb1 eq, r2, BACTUC; Si esta actualizado no hacemos nada 
+			
+			;Si no, lo actualizamos.
+			ld r3, r31, -20; Cargamos el byte de ayuda. 
+			ld r4, r31, 12; Cargamos puntero a CMPRDO(--------CAMBIADO AQUI------------)
+			ld r2, r31, -28; Cargamos el puntero al mapa de bits. 
+			st.b r3, r4,r2; Cargamos en el mapa el byte de ayuda.
+			addu r2, r2, 1; 
+			st r2, r31, -28; Incrementamos en uno para saber cuantos bytes tiene el mapa de bits.
+	
+			BACTUC:
+			
+			;-------------------------------7--------------------------------------
+			; GUARDAMOS LA LONGITUD EN LOS DOS PRIMEROS BYTES
+			ld r2, r31, -36; Cargamos long de texto. 
+			ld r3, r31, 12; Cargamos CMPRDO
+			st.h r2, r3, 0;
+			
+			;-------------------------------8--------------------------------------
+			; GUARDAMOS EL VALOR DE M/8 (1)
+			addu r2, r0, 1;
+			st.b r2, r3, 2;
+			
+			;-------------------------------9--------------------------------------
+			; GUARDAMOS EL NUMERO DE BYTES DEL MAPA
+			ld r20, r31, -28; Cargamos el puntero al mapa de bits. 
+			; se corresponde con la cantidad de bytes del mapa.
+			; No hace falta sumarle 5 a esta cantidad, incialmente ya parte del valor 5.
+			extu r5, r20, 8<0>; En r5 tenemos la parte inferior (el byte menos significativo)
+			st.b r5, r3, 3;
+			
+			extu r5, r20, 8<8>; En r5 tenemos la parte superior (el byte mas significativo)
+			st.b r5, r3, 4;
+			
+			; COPIAMOS EL TEXTO COMPRIMIDO A PARTIR DE r4, QUE USAREMOS COMO PUNTERO SOBRE CMPRDO. 
+			; Recordemos que en r31 -16 tenemos la longitud en bytes del texto comprimido
+			ld r2, r31, -16; 
+			addu r10, r0, 0; Usamos r10 como puntero al texto comprimido.
+			ld r25, r31, -40; Cargamos la direccion
+			
+			;-------------------------------10-------------------------------------
+			BUCCOPIAC: 
+			ld.bu r28, r25,r10;
+			st.b r28, r3, r20; 
+			addu r10, r10, 1; Incrementamos el puntero al texto comprimido.
+			addu r20, r20, 1; Incrementamos el puntero a cmprdo. 
+			DBNZ(r2, BUCCOPIAC);
+			
+			;-------------------------------11-------------------------------------
+			ld r2, r31, -16; Volvemos a cargar la longitud del texto comprimido. 
+			ld r3, r31, -28; Cargamos la longitud del mapa de bits. 
+			addu r29, r2, r3; Sumamos la long del mapa de bits y del texto comprimido 
+			
+			;Restauramos puntero de pila y volvemos a la subrutina llamante
+			or r30, r31, r31;
+			POP(r31)
+			POP(r1)
+			jmp(r1)
+	;______________________________________________________________________________
+
+
+
+	;_______________________________TESTS DESCOMPRIME______________________________
+	
+		org 0x8000
+	
+		;Test que comprueba la descompresion del caso de ejemplo presentado en el PDF de "Casos de ejemplo". No admite compresion.
+		
+		CADENAD1: data 0x07010014, 0x30000000, 0x34333231, 0x38373635
+		data 0x37383939, 0x33343536, 0x00303132, 0x00000000
+
+		PPAL_D1:
+		LEA(r30, 50000); Incializamos puntero de pila. 
+		addu r4, r0, 57000;
+		PUSH(r4); CARGAMOS DESC
+		LEA (r4,CADENAD1)
+		PUSH(r4); CARGAMOS COM
+		bsr Descomprime
+		addu r30, r30, 8;
+		stop
+		
+		;Test que comprueba la descompresion del caso de ejemplo presentado en el PDF de "Casos de ejemplo". Admite compresion. 	
+		CADENAD2: data 0x0b010044, 0x10102400, 0x74004000, 0x20736572
+		data 0x73697274, 0x04000274, 0x00016769, 0x6d6f6304
+		data 0x00046e65, 0x206f6704, 0x75206e65, 0x61060018
+		data 0x65202c6c, 0x7270206c, 0x72656d69, 0x2006000c
+		data 0x2e657571, 0x00002e2e
+		
+		PPAL_D2:
+		LEA(r30, 50000); Incializamos puntero de pila. 
+		addu r4, r0, 56992;
+		PUSH(r4); CARGAMOS DESC
+		LEA (r4,CADENAD2)
+		PUSH(r4); CARGAMOS COM
+		bsr Descomprime
+		addu r30, r30, 8;
+		stop
+		
+		
+		; Test que prueba a descomprimir una cadena de 32 caracteres que admite maxima compresion
+		; La cadena original: "12345678abcdefgh12345678abcdefgh\0"
+		CADENAD3: 
+		data 0x07010020, 0x31800000, 0x35343332, 0x61383736, 0x65646362
+		data 0x00686766, 0x00001000
+		
+		
+		PPAL_D3:
+		LEA(r30, 50000); Incializamos puntero de pila. 
+		addu r4, r0, 57000;
+		PUSH(r4); CARGAMOS DESC
+		LEA (r4,CADENAD3)
+		PUSH(r4); CARGAMOS COM
+		bsr Descomprime
+		addu r30, r30, 8;
+		stop
+		
+		; Test que llama a descomprime con una cadena 
+		; cuyos valores estan cerca del maximo y minimo en ASCII
+		; Cadena original:
+		; data 0xFAFAEFEF,0xFAFAEFEF, 0x01010202,  0xBAABCDFF, 0x02727374
+		; data 0x01010202,0x01010202, 0xFAFAEFEF,0xEAFAEFEF
+		CADENAD4: 
+		data 0x08010024, 0x000E0000, 0xFAFAEFEF, 0xFAFAEFEF, 0x01010202,0xBAABCDFF
+		data 0x02727374, 0x08040008, 0x00000400, 0x0000EA07
+		
+		PPAL_D4:
+		LEA(r30, 50000); Incializamos puntero de pila. 
+		addu r4, r0, 57000;
+		PUSH(r4); CARGAMOS DESC
+		LEA (r4,CADENAD4)
+		PUSH(r4); CARGAMOS COM
+		bsr Descomprime
+		addu r30, r30, 8;
+		stop
+	;______________________________________________________________________________
+
+
+
+	;__________________________________DESCOMPRIME_________________________________	
+	
+	Descomprime:
+		PUSH(r1);
+		PUSH(r31)
+		or r31, r30, r30; 
+		
+		;-------------------------------1--------------------------------------
+		subu r30, r30, 20;  
+			; -4 para el puntero al texto com
+			; -8 para el contador
+			; -12 para el puntero a desc
+			; -16 para el puntero al mapa de bits
+			; -20 para cada byte del mapa de bits
+			; -24 para guardar puntero al comienzo del texto 
+		
+		addu r2, r0, 5; Introducimos un cinco en r2 para inicicalizar el puntero al mapa de bits
+		ld r3, r31, 8;  Cargamos en r3 el parámetro del texto comprimido
+		ld.h r19, r3, 0; Mantenemos en r19 la longitud de la cadena descomprimida. Lo usaremos para acabar el bucle
+		
+		;Almacenamos las variables
+		st r0, r31, -8; Contador
+		st r0, r31, -12; Puntero a desc
+		st r2, r31, -16; Punteor a mapa de bits
+		
+		;Calcular el comienzo del texto comprimido
+		ld.bu r5, r3, 4; Cargamos el cuarto byte
+		mulu r5, r5, 256; Lo desplazamos a la izquierda
+		ld.bu r6, r3, 3; Cargamos el tercero
+		addu r5, r5, r6; Cargamos el comienzo del texto despues del mapa de bits
+		
+		st r5, r31, -4; Tenemos la variable apuntando al primer elemento texto comprimido
+		st r5, r31, -24; Guardamos el comienzo, se quedara ahi para toda la ejecucion 
+		
+		ld.bu r16, r3, 5; Cargamos el primer byte del maapa de bits
+		st r16, r31, -20; Lo inicializamos
+		
+		;-------------------------------2--------------------------------------
+		addu r8, r0, 8; Inicializamos a 8 el r8 para usarlo luego de contador
+		ld r10, r31, 8; Cargamos com
+		ld r11, r31, 12; Cargamos desc
+		addu r6, r0, 0; Inicializamos a 0 el puntero al texto decomprimido
+		
+		BCD:
+		ld.bu r7, r10, r5; Cargamos el valor de com  
+		st.b r7, r11, r6; Lo copiamos en desc
+		;Incrementamos los punteros
+		addu r5, r5, 1;
+		addu r6, r6, 1;
+		DBNZ(r8,BCD);	
+		
+		;Almacenamos los valores de punteros en las variables locales
+		st r5, r31, -4;
+		st r6, r31, -12;
+		
+		;-------------------------------3--------------------------------------
+		BUCLED:
+	
+		ld r15, r31, -16; Cargamos el puntero al mapa de bits. 
+		ld r16, r31, -20; Cargamos el byte al que apunta el puntero.
+		
+		extu r3, r16, 1<7>; Extrae el bit en la posicion 7
+		cmp r2, r3, 0x00; Comparamos si el bit es 0
+		bb0 eq, r2, ES1D; si no lo es saltamos a ES1D
+		
+		;-------A
+		ES0D:
+		ld r10, r31, 8; Cargamos com
+		ld r11, r31, 12; Cargamos desc
+		ld.bu r7, r10, r5; Cargamos el valor de com  
+		st.b r7, r11, r6; Lo copiamos en desc
+		;Incrementamos los punteros
+		addu r5, r5, 1;
+		addu r6, r6, 1;
+		br FINBD;
+		
+		;-------B
+		ES1D:
+		ld r10, r31, 8; Cargamos com
+		ld r11, r31, 12; Cargamos desc
+		;Calcular el comienzo del texto comprimido
+		ld.bu r7, r10, r5; Cargamos el primer byte (1º parte de la pos)
+		addu r5, r5, 1; Incrementamos r5 en 1
+		ld.bu r9, r10, r5; Cargamos el segundo (2º parte de la pos)
+		mulu r9, r9, 256; Lo desplazamos a la izquierda
+		addu r7, r7, r9; Obtenemos la posicion de la cadena a copiar
+		addu r5, r5, 1; Incrementamos r5 en 1
+		ld.bu r17, r10, r5; Cargamos la longitud
+		;Incrementamos el puntero a COM.
+		addu r5, r5, 1;
+		
+		;Bucle para copiar L caracteres
+		COPIALD: 
+		ld.bu r2, r11, r7; Cargamos el caracter a copiar en la pos (r11+r7)
+		st.b r2, r11, r6; Almacenamos el caracter en pos(r11+r6)  
+		;Avanzamos los punteros
+		addu r6, r6, 1;
+		addu r7, r7, 1;
+		DBNZ(r17, COPIALD);
+		
+		;-------C
+		FINBD:
+		mulu r16, r16, 2; Rotamos un bit para avanzar
+		ld r8, r31, -8;	Cargamos el contador en r8
+		addu r8, r8, 1; Incrementamos el "puntero" de bits
+		
+		cmp r2, r8, 8; Comprobamos que el byte esta lleno
+		bb1 eq, r2, ACTBYTED; En tal caso actualizamos el byte
+		st r16, r31, -20; Almacenamos el byte en la var.local para el mapa de bits
+		st r8, r31, -8; Guardamos el contador
+		br FINBD2;
+		
+		ACTBYTED:
+		ld r2, r31, -16; Cargamos el puntero al mapa de bits
+		addu r2, r2, 1; 
+		st r2, r31, -16; Lo almacenamos de vuelta, lo tenemos apuntando a la pos correcta
+		ld.bu r16, r10, r2; Tenemos en r16 el byte
+		st r16, r31, -20; Lo almacenamos
+		st r0, r31, -8; Ponemos el contador de bits a 0 
+		
+		br FINBD2;
+		
+		FINBD2: 
+		cmp r2, r6, r19;
+		bb1 ge, r2, FIND2; Si longitud desc = punt desc +1, entonces hemos acabado. 
+		br BUCLED; Si no lo es, entonces seguimos iterando.
+		
+		FIND2: 
+		;-------------------------------4--------------------------------------
+		st.b r0, r11, r6; Metemos el 00 al final de la cadena (CARACTER TERMINADOR)
+		;-------------------------------5--------------------------------------
+		addu r29, r0, r19; Metemos la longitud del texto descomprimido. 
+
+		;FINAL
+			or r30, r31, r31;
+			POP(r31)
+			POP(r1)
+			jmp(r1)
+	;______________________________________________________________________________
+		
+		
+		
+	;________________________________TESTS VERIFICA________________________________
+	
+		; (Para verifica podemos repetir las mismas cadenas que con comprime)
+		
+		org 0x8800
+		; Llama a Verifica con la cadena de ejemplo de la presentacion. 
+		; Checksum1 = 57000
+		; Checksum2 = 57400
+		PPAL_V1:
+		LEA(r30, 50000); Incializamos puntero de pila. 
+		addu r2, r0, 57000;
+		PUSH(r2); CARGAMOS Checksum1
+		addu r2, r0, 57400;
+		PUSH(r2); CARGAMOS Checksum2
+		
+		LEA (r4,CADENAC1)
+		PUSH(r4); CARGAMOS Texto
+		bsr Verifica
+		addu r30, r30, 12;
+		stop
+
+		; Llama a Verifica con el ejemplo del PDF "Casos de ejemplo" que no admite compresion
+		; Checksum1 = 57000
+		; Checksum2 = 57400
+		PPAL_V2:
+		LEA(r30, 50000); Incializamos puntero de pila. 
+		addu r2, r0, 57000;
+		PUSH(r2); CARGAMOS Checksum1
+		addu r2, r0, 57400;
+		PUSH(r2); CARGAMOS Checksum2
+		
+		LEA (r4,CADENAC2)
+		PUSH(r4); CARGAMOS Texto
+		bsr Verifica
+		addu r30, r30, 12;
+		stop
+		
+		; Llama a Verifica con una cadena que admite maxima compresion, de 32 caracteres. 
+		; Checksum1 = 57000
+		; Checksum2 = 57400
+		PPAL_V3:
+		LEA(r30, 50000); Incializamos puntero de pila. 
+		addu r2, r0, 57000;
+		PUSH(r2); CARGAMOS Checksum1
+		addu r2, r0, 57400;
+		PUSH(r2); CARGAMOS Checksum2
+		
+		LEA (r4,CADENAC3)
+		PUSH(r4); CARGAMOS Texto
+		bsr Verifica
+		addu r30, r30, 12;
+		stop
+		
+		;Llama a Verifica con una cadena de 36 caracteres, cuyo valores en ASCII son cercanos al maximo y minimo.		
+		; Checksum1 = 57000
+		; Checksum2 = 57400
+		PPAL_V4:
+		LEA(r30, 50000); Incializamos puntero de pila. 
+		addu r2, r0, 57000;
+		PUSH(r2); CARGAMOS Checksum1
+		addu r2, r0, 57400;
+		PUSH(r2); CARGAMOS Checksum2
+		
+		LEA (r4,CADENAC4)
+		PUSH(r4); CARGAMOS Texto
+		bsr Verifica
+		addu r30, r30, 12;
+		stop
+	
+		;Llama a Verifica con una cadena de 36 caracteres, cuyo valores en ASCII son cercanos al maximo y minimo. 
+		; En este caso, las compresiones comienzan a mitad de los bytes.
+		; Checksum1 = 57000
+		; Checksum2 = 57400
+		PPAL_V5:
+		LEA(r30, 50000); Incializamos puntero de pila. 
+		addu r2, r0, 57000;
+		PUSH(r2); CARGAMOS Checksum1
+		addu r2, r0, 57400;
+		PUSH(r2); CARGAMOS Checksum2
+		
+		LEA (r4,CADENAC5)
+		PUSH(r4); CARGAMOS Texto
+		bsr Verifica
+		addu r30, r30, 12;
+		stop
+
+		;Llama a Verifica con una cadena de 36 caracteres, cuyo valores en ASCII son cercanos al maximo. Admite compresion.
+		; Checksum1 = 57000
+		; Checksum2 = 57400
+		PPAL_V6:
+		LEA(r30, 50000); Incializamos puntero de pila. 
+		addu r2, r0, 57000;
+		PUSH(r2); CARGAMOS Checksum1
+		addu r2, r0, 57400;
+		PUSH(r2); CARGAMOS Checksum2
+		
+		LEA (r4,CADENAC6)
+		PUSH(r4); CARGAMOS Texto
+		bsr Verifica
+		addu r30, r30, 12;
+		stop
+		
+		
+		; Llama a Verifica con una cadena cuya longitud es superior a 256 caracteres
+		; Checksum1 = 57000
+		; Checksum2 = 57400
+		PPAL_V7:
+		LEA(r30, 50000); Incializamos puntero de pila. 
+		addu r2, r0, 57000;
+		PUSH(r2); CARGAMOS Checksum1
+		addu r2, r0, 57400;
+		PUSH(r2); CARGAMOS Checksum2
+		
+		LEA (r4,CADENAC7)
+		PUSH(r4); CARGAMOS Texto
+		bsr Verifica
+		addu r30, r30, 12;
+		stop		
+	;______________________________________________________________________________	
+		
+		
+		
+	;__________________________________VERIFICA____________________________________
+	
+	Verifica:
+			PUSH(r1);
+			PUSH(r31)
+			or r31, r30, r30; 
+			or r29, r0,r0;
+			ld r3, r31, 8; Cargamos la direccion del texto; 
+	
+	;Reserva de espacio en pila para pasar PilaDes y PilaCom
+	
+			PUSH(r3); Pasamos por pila la direccion del primer elemento
+			bsr LongCad ;En r29 nos devuelve la longitud del texto
+			or r9, r29, 0; Se copia la longitud temporalmente para tratarla
+			POP(r3); Recuperamos el parametro texto
+	
+	;PilaCom
+		;Calculo del espacio
+			addu r22, r9, 5; 
+			addu r23, r9, 7; 
+			divu r23, r23, 8;
+			subu r23, r23, 1; 
+			addu r22, r22, r23; 	
+		;Ajuste por exceso al siguiente mult. de 4
+			addu r22, r22, 3; 
+			divu r22, r22, 4; 
+			mulu r22, r22, 4; 
+		;En r22 tenemos la longitud de PilaCom
+	
+	SIG:	
+	
+	;PilaDes
+		;Calculo del espacio
+			;Resultado de LongCad;
+		;Ajuste por exceso al siguiente mult. de 4	
+			addu r9, r9, 3;
+			divu r9, r9, 4;
+			mulu r9, r9, 4; 
+		;En r9 tenemos la longitud de PilaDes
+			
+	SIG1:
+		
+		;Reserva
+		subu r30, r30, 12; 
+						 ; -4 para el puntero a PilaCom
+						 ; -8 para el puntero a PilaDes
+						 ; -12 para la longitud del texto original
+		subu r30, r30, r22; Reservamos memoria para PilaCom
+		subu r30, r30, r9; Reservamos memoria para PilaDes
+		addu r9, r9, 12; Nos saltamos las v. loc.
+		addu r9, r9, r22; Metemos en r9 el comienzo de PilaDes
+		addu r22, r22, 12; Metemos en r9 el comienzo de PilaCom
+		st r9, r31, -4;	PilaCom = r30 - (r22 + 8);
+		st r22, r31, -8; PilaDes = r30 - (r9 + r22 + 8);
+		st r29, r31, -12; Guardamos el r29 previo para no llamar otra vez a LongCad + adelante
+		
+	;Llamada a Comprimir para comprimir texto y dejarlo en PilaCom		
+			subu r7, r31, r22; Apuntamos al primer elemento de PilaCom
+			PUSH(r7); Comprdo
+			ld r3, r31, 8; Cargamos el texto
+			PUSH(r3); Texto
+			bsr Comprime;
+			;DEJA RESULTADO EN PilaCom;
+			POP(r3);
+			POP(r7);
+			
+	;Llamada a Descomprimir para comprimir texto y dejarlo en PilaDes
+			ld r9, r31, -4; Cargamos el Des
+			subu r8, r31, r9; Apuntamos al primer elemento de PilaDes
+			PUSH(r8); Desc
+			PUSH(r7); Com
+			bsr Descomprime;
+			;DEJA RESULTADO EN PilaDes;
+			addu r21, r29, r0; Guardamos el tamaño del texto descomprimido
+			POP(r7)
+			addu r30, r30, 4; Actualizamos SP
+	
+	;Verificar que el tamaño de ambos textos es igual
+	
+		;Cargamos de memoria el tamaño del texto original
+			ld r20, r31, -12;
+		
+		;Comparacion
+			or r29, r0, 0; Ponemos r29 a 0 
+			cmp r2, r20, r21; Comparamos si ambos registros son iguales
+			bb1 eq, r2, CKV; Si lo son se deja a 0 r29 y pasamos al final
+			sub r29, r0, 1; En caso contrario ponemos r29 a -1 y acabamos
+			br FINV;
+	
+		CKV:
+	;Calcular checksum de ambas zonas de texto
+	
+		;Cheksum para el texto original
+			ld r3, r31, 8;
+			PUSH(r3); Pasamos por pila la direccion del primer caracter del texto original
+			bsr Checksum; En r29 nos devuelve el resultado
+			or r10, r29, 0; Almacenamos el resultado en un registro temporal
+			POP(r3)
+		
+		;Cheksum para el texto resultante
+			PUSH(r10); Guardamos el resultado del CheckSum1		
+			ld r9, r31, -4; Cargamos el Des
+			subu r8, r31, r9; Apuntamos al primer elemento de PilaDes
+			PUSH(r8); Pasamos por pila la direccion del primer elemento de PilaDes
+			bsr Checksum; En r29 nos devuelve el resultado
+			or r11, r29, 0; Almacenamos el resultado en un registro temporal
+			addu r30, r30, 4; Actualizamos el SP
+			POP(r10);
+			
+		;Comparacion
+			ld r2, r31, 12; Cargamos el puntero a CheckSum1
+			st r10, r2, 0; Meter el resultado de CheckSum1 en r10
+			
+			ld r2, r31, 16; Cargamos el puntero a CheckSum2
+			st r11, r2, 0; Meter el resultado de CheckSum2 en r11
+			
+			or r29, r0, 0; Ponemos r29 a 0 
+			cmp r2, r10, r11; Comparamos si ambos registros son iguales
+			bb1 eq, r2, FINV; Si lo son se deja a 0 r29 y pasamos al final
+			sub r29, r0, 1; En caso contrario ponemos r29 a -1 y acabamos
+			br FINV;
+			
+			FINV:
+			or r30, r31, r31; Destruccion del marco de pila.
+			POP(r31)
+			POP(r1)
+			jmp(r1)
+	;______________________________________________________________________________
+
+		
